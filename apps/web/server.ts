@@ -11,6 +11,9 @@
  *
  * Requests from AI assistants and search crawlers are reported to DataFast's
  * Bot traffic card, since those bots skip the browser script in index.html.
+ *
+ * /config.js carries the API_URL and WS_URL environment variables to the
+ * browser (see src/lib/config.ts), so one image works for any server.
  */
 
 import path from "node:path";
@@ -22,6 +25,20 @@ const PORT = 3000;
 const COMPRESSIBLE = /\.(html|js|mjs|css|json|svg|xml|txt|vtt|webmanifest|map)$/;
 const IMMUTABLE_DIRS = ["assets", "blog-media"].map((dir) => path.join(DIST_DIR, dir) + path.sep);
 const gzipCache = new Map<string, { mtime: number; body: Uint8Array }>();
+
+/**
+ * Body for /config.js when API_URL or WS_URL is set. Otherwise null, and the
+ * build's own public/config.js (a no-op) is served like any other file.
+ */
+function runtimeConfigScript() {
+  const trim = (url: string | undefined) => url?.trim().replace(/\/+$/, "") || undefined;
+  const config = { apiUrl: trim(process.env.API_URL), wsUrl: trim(process.env.WS_URL) };
+  if (!config.apiUrl && !config.wsUrl) return null;
+  // "<" escaped so a value can never close a <script> tag
+  const json = JSON.stringify(config).replace(/</g, "\\u003c");
+  return `window.__OPEN_SUNSAMA_CONFIG__ = ${json};\n`;
+}
+const RUNTIME_CONFIG = runtimeConfigScript();
 
 async function findFile(pathname: string) {
   const clean = pathname.replace(/\/+$/, "") || "/";
@@ -44,7 +61,9 @@ async function findFile(pathname: string) {
 }
 
 function cacheControl(filePath: string) {
-  if (filePath.endsWith(".html")) return "no-cache";
+  if (filePath.endsWith(".html") || filePath === path.join(DIST_DIR, "config.js")) {
+    return "no-cache";
+  }
   // Vite fingerprints /assets; the media recorder content-hashes /blog-media
   if (IMMUTABLE_DIRS.some((dir) => filePath.startsWith(dir))) {
     return "public, max-age=31536000, immutable";
@@ -76,6 +95,15 @@ async function respond(req: Request) {
     pathname = decodeURIComponent(new URL(req.url).pathname);
   } catch {
     return new Response("Bad Request", { status: 400 });
+  }
+
+  if (pathname === "/config.js" && RUNTIME_CONFIG) {
+    return new Response(RUNTIME_CONFIG, {
+      headers: {
+        "Content-Type": "text/javascript; charset=utf-8",
+        "Cache-Control": "no-cache",
+      },
+    });
   }
 
   let found = await findFile(pathname);

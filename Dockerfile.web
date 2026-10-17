@@ -26,9 +26,12 @@ COPY packages/utils/ ./packages/utils/
 COPY packages/api-client/ ./packages/api-client/
 COPY apps/web/ ./apps/web/
 
-# Build args for environment variables needed at build time
-ARG VITE_API_URL
-ARG VITE_WS_URL
+# Optional: bake the API URL into the JavaScript. Leave empty for an image that
+# works anywhere; server.ts then hands the browser API_URL (and WS_URL) from the
+# container's environment at runtime via /config.js. That is what the published
+# images and docker-compose.yml do.
+ARG VITE_API_URL=""
+ARG VITE_WS_URL=""
 ENV VITE_API_URL=$VITE_API_URL
 ENV VITE_WS_URL=$VITE_WS_URL
 
@@ -51,5 +54,7 @@ COPY --from=builder /app/apps/web/server.js ./server.js
 ENV PORT=3000
 EXPOSE 3000
 
-# Static server with SPA fallback that serves pre-rendered blog pages
+# Static server with SPA fallback that serves pre-rendered blog pages. Set
+# API_URL when starting the container (WS_URL too, if the WebSocket lives
+# elsewhere): docker run -e API_URL=https://api.tasks.example.com ...
 CMD ["bun", "run", "server.js"]
