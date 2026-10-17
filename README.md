@@ -293,10 +293,10 @@ Scopes: `tasks:read` `tasks:write` `time-blocks:read` `time-blocks:write` `ideas
 ```bash
 git clone https://github.com/ShadowWalker2014/open-sunsama.git
 cd open-sunsama
-docker compose up -d --build   # PostgreSQL, Redis, API on :3001, web app on :3000
+docker compose up -d   # PostgreSQL, Redis, API on :3001, web app on :3000
 ```
 
-Open http://localhost:3000 and create your account. The API creates the database tables on start, and the MCP connector is at http://localhost:3001/mcp. The [self-hosting guide](https://opensunsama.com/docs/self-hosting/docker) covers running on a server with your own domain, optional integrations, and backups. The desktop and mobile apps connect only to opensunsama.com, so self-hosters use the web app.
+Open http://localhost:3000 and create your account. Compose pulls the published images (amd64 and arm64); `docker compose pull` updates them, and `docker compose up -d --build` builds from source instead. The API creates the database tables on start, and the MCP connector is at http://localhost:3001/mcp. The [self-hosting guide](https://opensunsama.com/docs/self-hosting/docker) covers running on a server with your own domain, optional integrations, and backups. The desktop and mobile apps connect only to opensunsama.com, so self-hosters use the web app.
 
 <details>
 <summary><b>Run from source</b></summary>

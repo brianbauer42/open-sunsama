@@ -1,17 +1,17 @@
 export const frontmatter = {
   title: "Docker Deployment",
   description:
-    "Self-host Open Sunsama with Docker Compose: one command builds the API and web app, starts PostgreSQL and creates the database tables.",
+    "Self-host Open Sunsama with Docker Compose: one command pulls the API and web app images, starts PostgreSQL and creates the database tables.",
   order: 1,
   section: "self-hosting",
 };
 
-One command builds Open Sunsama from source, starts PostgreSQL, and creates the database tables. You get the web app, the REST API, and the MCP connector for AI agents, all on your own machine or server.
+One command pulls the Open Sunsama images, starts PostgreSQL, and creates the database tables. You get the web app, the REST API, and the MCP connector for AI agents, all on your own machine or server.
 
 ## Prerequisites
 
 - Docker 20.10+ with Docker Compose 2.24+ (check with `docker compose version`)
-- 2 GB of RAM or more (building the web app needs it)
+- 2 GB of RAM or more if you build the images from source
 - For a server: a domain name and a reverse proxy for HTTPS
 
 ## Quick Start
@@ -19,10 +19,10 @@ One command builds Open Sunsama from source, starts PostgreSQL, and creates the 
 ```bash
 git clone https://github.com/ShadowWalker2014/open-sunsama.git
 cd open-sunsama
-docker compose up -d --build
+docker compose up -d
 ```
 
-The first build takes a few minutes. Then open `http://localhost:3000` and create your account. To check the API, run `curl http://localhost:3001/health`.
+The first start downloads the images. Then open `http://localhost:3000` and create your account. To check the API, run `curl http://localhost:3001/health`.
 
 This starts four containers:
 
@@ -30,6 +30,8 @@ This starts four containers:
 - **api:** the API on port 3001. On every start it applies any new database migrations. On the first start it also generates `JWT_SECRET` and `CALENDAR_ENCRYPTION_KEY` and stores them in the `api_secrets` volume, so logins survive restarts.
 - **redis:** Redis, which relays live updates between the API and open browser tabs. Also bound to localhost.
 - **web:** the web app on port 3000.
+
+The images are published for `linux/amd64` and `linux/arm64` (Raspberry Pi 4 and 5, Apple silicon, ARM servers) as `ghcr.io/shadowwalker2014/open-sunsama-api` and `ghcr.io/shadowwalker2014/open-sunsama-web`. To build them from your checkout instead, run `docker compose up -d --build`.
 
 `docker compose up -d postgres` starts only PostgreSQL, on `localhost:5431`. That is the setup for [running from source](https://github.com/ShadowWalker2014/open-sunsama#-get-started).
 
@@ -45,14 +47,14 @@ WEB_APP_URL=https://tasks.your-domain.com
 POSTGRES_PASSWORD=a-long-random-password
 ```
 
-The web app has `API_URL` built into its JavaScript, and the API uses `WEB_APP_URL` for CORS. Both must match the exact addresses people type in the browser, including `https://`.
+The web container hands `API_URL` to the browser when it starts, and the API uses `WEB_APP_URL` for CORS. Both must match the exact addresses people type in the browser, including `https://`.
 
 `POSTGRES_PASSWORD` only takes effect when the database volume is first created. Set it before your first start.
 
 ### 2. Start the stack
 
 ```bash
-docker compose up -d --build
+docker compose up -d
 ```
 
 ### 3. Put HTTPS in front
@@ -105,7 +107,7 @@ Ports 3000 and 3001 are published on all interfaces. On a public server, let you
 
 ## Configuration
 
-Docker Compose reads `.env` from the repository root. After you change it, run `docker compose up -d --build` again. The rebuild matters only for `API_URL`, since the web app bakes it in.
+Docker Compose reads `.env` from the repository root. After you change it, run `docker compose up -d` again.
 
 ### Core settings
 
@@ -113,6 +115,8 @@ Docker Compose reads `.env` from the repository root. After you change it, run `
 | ------------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
 | `API_URL`                 | `http://localhost:3001` | Public API URL. The web app calls it, and it is the OAuth issuer for MCP connectors, so your connector URL is `${API_URL}/mcp` |
 | `WEB_APP_URL`             | `http://localhost:3000` | Public web app URL. Used for CORS, email links, and the MCP consent screen                                                  |
+| `WS_URL`                  | from `API_URL`          | WebSocket URL for live updates. Set it only if the WebSocket is not served from `API_URL`                                    |
+| `OPEN_SUNSAMA_TAG`        | `latest`                | Image version to run, for example `1.2.4`                                                                                    |
 | `POSTGRES_PASSWORD`       | `opensunsama`           | Database password, read when the volume is first created                                                                     |
 | `JWT_SECRET`              | generated               | Signs login tokens. Set your own with `openssl rand -base64 32`                                                              |
 | `CALENDAR_ENCRYPTION_KEY` | generated               | Encrypts stored calendar credentials. Set your own with `openssl rand -hex 32`                                              |
@@ -133,6 +137,10 @@ Tasks, time blocks, focus mode, rollover, the REST API and the MCP connector wor
 | File uploads                   | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_S3_BUCKET_NAME`, `AWS_ENDPOINT_URL`, `AWS_DEFAULT_REGION` (any S3-compatible storage) |
 | Push notifications             | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (generate with `npx web-push generate-vapid-keys`)   |
 
+### Without Docker Compose
+
+The images also run on Kubernetes, Portainer, Unraid and the like. Give the web container `API_URL` (and `WS_URL` if needed) as environment variables. The API container takes the same environment as the `api` service in `docker-compose.yml`.
+
 ## Desktop and Mobile Apps
 
 The desktop and mobile apps on the [download page](/download) connect only to `https://api.opensunsama.com`. Their API address is fixed when they are built, so they can't sign in to your server. Use the web app in your browser instead.
@@ -144,9 +152,12 @@ AI agents work with your server too. Add `${API_URL}/mcp` as a connector. Claude
 ## Updating
 
 ```bash
-git pull
-docker compose up -d --build
+git pull               # picks up changes to docker-compose.yml
+docker compose pull
+docker compose up -d
 ```
+
+If you build from source, run `git pull` and `docker compose up -d --build` instead.
 
 The API applies new migrations when it starts. To run them on their own:
 
@@ -220,7 +231,7 @@ Run `docker compose logs api`. A line starting with `[Migrations] Failed` means 
 
 ### The web app calls `localhost:3001` on your server
 
-The web app was built before you set `API_URL`. Rebuild it with `docker compose up -d --build`.
+The web container started without `API_URL`. Set it in `.env` and run `docker compose up -d`. `curl http://localhost:3000/config.js` shows the URL the browser gets.
 
 ### Port 5431, 6379, 3000 or 3001 is already in use
 

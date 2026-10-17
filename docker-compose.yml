@@ -1,9 +1,14 @@
 # Full stack: postgres -> redis -> api -> web
 #
-# Self-hosting:  docker compose up -d --build
-#   Then open http://localhost:3000. The API applies database migrations on
-#   every start and generates its own secrets on the first one. Settings go
-#   in .env; see https://opensunsama.com/docs/self-hosting/docker
+# Self-hosting:  docker compose up -d
+#   Pulls the published images and opens on http://localhost:3000. The API
+#   applies database migrations on every start and generates its own secrets
+#   on the first one. Settings go in .env; see
+#   https://opensunsama.com/docs/self-hosting/docker
+#   Update with `docker compose pull && docker compose up -d`.
+#
+# From source:   docker compose up -d --build
+#   Builds both images from this checkout instead.
 #
 # Development:   docker compose up -d postgres
 #   PostgreSQL only, on localhost:5431, for `bun run dev`.
@@ -44,6 +49,7 @@ services:
       retries: 5
 
   api:
+    image: ghcr.io/shadowwalker2014/open-sunsama-api:${OPEN_SUNSAMA_TAG:-latest}
     build:
       context: .
       dockerfile: Dockerfile.api
@@ -78,12 +84,14 @@ services:
     restart: unless-stopped
 
   web:
+    image: ghcr.io/shadowwalker2014/open-sunsama-web:${OPEN_SUNSAMA_TAG:-latest}
     build:
       context: .
       dockerfile: Dockerfile.web
-      args:
-        # Baked into the JavaScript at build time: rebuild after changing API_URL
-        VITE_API_URL: ${API_URL:-http://localhost:3001}
+    environment:
+      # Read when the container starts and handed to the browser via /config.js
+      API_URL: ${API_URL:-http://localhost:3001}
+      WS_URL: ${WS_URL:-}
     ports:
       - "3000:3000"
     depends_on:
