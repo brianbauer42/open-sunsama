@@ -3,6 +3,7 @@ import { Download, Monitor, Apple, Cpu, ExternalLink, CheckCircle2 } from "lucid
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { API_URL } from "@/lib/config";
 
 type PlatformKey = "windows" | "macos-arm64" | "macos-x64" | "linux";
 
@@ -62,8 +63,7 @@ export function DesktopSettings() {
 
   React.useEffect(() => {
     async function fetchReleases() {
-      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3001";
-      const response = await fetch(`${apiUrl}/releases/latest`);
+      const response = await fetch(`${API_URL}/releases/latest`);
       if (!response.ok) {
         setIsLoading(false);
         return;

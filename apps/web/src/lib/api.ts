@@ -1,7 +1,6 @@
 import { createApi, createOpenSunsamaClient, type OpenSunsamaClient } from "@open-sunsama/api-client";
 import { isDesktop } from "./desktop";
-
-const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import { API_URL } from "./config";
 
 /**
  * Desktop fetch wrapper that routes requests through Tauri's HTTP plugin.
@@ -75,7 +74,7 @@ async function performRefresh(): Promise<string | null> {
   const existing = getToken();
   if (!existing) return null;
   try {
-    const refreshClient = createApi({ baseUrl, token: existing, customFetch });
+    const refreshClient = createApi({ baseUrl: API_URL, token: existing, customFetch });
     const result = await refreshClient.auth.refreshToken();
     // If the session was torn down (logout) while this refresh was in flight,
     // don't resurrect it by writing a fresh token back.
@@ -110,7 +109,7 @@ export function refreshAuthToken(): Promise<string | null> {
 
 function buildApi(token: string | undefined) {
   return createApi({
-    baseUrl,
+    baseUrl: API_URL,
     token,
     customFetch,
     getToken,
@@ -120,7 +119,7 @@ function buildApi(token: string | undefined) {
 
 function buildClient(token: string | undefined): OpenSunsamaClient {
   return createOpenSunsamaClient({
-    baseUrl,
+    baseUrl: API_URL,
     token,
     customFetch,
     getToken,

@@ -25,8 +25,9 @@ import { useCreateApiKey } from "@/hooks/useApiKeys";
 import { useMcpConnections, useDisconnectMcpConnection } from "@/hooks/useMcpConnections";
 import type { ApiKeyScope } from "@open-sunsama/types";
 import { AppLogo } from "./app-logo";
+import { CONFIGURED_API_URL } from "@/lib/config";
 
-const API_URL = import.meta.env.VITE_API_URL || "https://api.opensunsama.com";
+const API_URL = CONFIGURED_API_URL || "https://api.opensunsama.com";
 const MCP_URL = `${API_URL.replace(/\/$/, "")}/mcp`;
 const IS_HOSTED = API_URL.replace(/\/$/, "") === "https://api.opensunsama.com";
 

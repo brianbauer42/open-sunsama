@@ -1,5 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
+import { API_URL } from "@/lib/config";
 
 // File size limits
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -106,15 +107,12 @@ export function useUploadAttachment() {
         throw new Error("Authentication required");
       }
 
-      // Get API base URL
-      const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3001";
-
       // Create FormData
       const formData = new FormData();
       formData.append("file", file);
 
       // Upload the file
-      const response = await fetch(`${baseUrl}/uploads/attachments`, {
+      const response = await fetch(`${API_URL}/uploads/attachments`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

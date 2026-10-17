@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { User } from "@open-sunsama/types";
 import { toast } from "@/hooks/use-toast";
+import { API_URL } from "@/lib/config";
 
 const AUTH_USER_KEY = "open_sunsama_user";
 
@@ -67,11 +68,8 @@ export function useUploadAvatar() {
       const formData = new FormData();
       formData.append("file", file);
 
-      // Get base URL from environment
-      const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3001";
-
       // Upload to API
-      const response = await fetch(`${baseUrl}/uploads/avatar`, {
+      const response = await fetch(`${API_URL}/uploads/avatar`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

@@ -11,6 +11,7 @@ import { Link } from "@tanstack/react-router";
 import { useGitHubStars } from "@/components/marketing/site-header";
 import { openSource } from "@/content/marketing/pages/open-source-task-manager";
 import { cn } from "@/lib/utils";
+import { CONFIGURED_API_URL } from "@/lib/config";
 
 interface LatestRelease {
   version: string;
@@ -37,7 +38,7 @@ export function useLatestRelease(): LatestRelease | null {
 
   React.useEffect(() => {
     if (release || !import.meta.env.PROD) return;
-    const api = import.meta.env.VITE_API_URL || "https://api.opensunsama.com";
+    const api = CONFIGURED_API_URL || "https://api.opensunsama.com";
     let cancelled = false;
     fetch(`${api}/releases/latest`)
       .then((res) => (res.ok ? res.json() : null))

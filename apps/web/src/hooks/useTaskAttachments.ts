@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Attachment } from "@open-sunsama/types";
 import { toast } from "@/hooks/use-toast";
 import { validateFile } from "./useUploadAttachment";
+import { API_URL } from "@/lib/config";
 
 /**
  * Query key factory for attachments
@@ -43,8 +44,7 @@ export function useTaskAttachments(taskId: string) {
         throw new Error("Not authenticated");
       }
 
-      const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3001";
-      const response = await fetch(`${baseUrl}/attachments?taskId=${taskId}`, {
+      const response = await fetch(`${API_URL}/attachments?taskId=${taskId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -94,8 +94,7 @@ export function useTaskAttachments(taskId: string) {
       formData.append("file", file);
       formData.append("taskId", taskId);
 
-      const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3001";
-      const response = await fetch(`${baseUrl}/uploads/attachments`, {
+      const response = await fetch(`${API_URL}/uploads/attachments`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -142,9 +141,8 @@ export function useTaskAttachments(taskId: string) {
         throw new Error("Not authenticated");
       }
 
-      const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3001";
       const response = await fetch(
-        `${baseUrl}/attachments/${attachmentId}`,
+        `${API_URL}/attachments/${attachmentId}`,
         {
           method: "DELETE",
           headers: {

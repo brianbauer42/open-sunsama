@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { useSEO, SEO_CONFIGS } from "@/hooks/useSEO";
 import { trackGoal } from "@/lib/analytics";
 import { MarketingLayout } from "@/components/marketing/marketing-layout";
+import { API_URL } from "@/lib/config";
 
 // Platform configuration
 type PlatformKey = "windows" | "macos-arm64" | "macos-x64" | "linux";
@@ -319,9 +320,8 @@ export default function DownloadPage() {
 
   React.useEffect(() => {
     async function fetchReleases() {
-      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3001";
       try {
-        const response = await fetch(`${apiUrl}/releases/latest`);
+        const response = await fetch(`${API_URL}/releases/latest`);
         if (!response.ok) {
           setError("Unable to load releases");
           setIsLoading(false);

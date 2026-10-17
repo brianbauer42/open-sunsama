@@ -5,9 +5,7 @@ import type {
 } from "@open-sunsama/types";
 import { getApi } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
-
-// API base URL for direct fetch calls (push subscription doesn't go through api-client)
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import { API_URL } from "@/lib/config";
 
 /**
  * Query key factory for notification preferences
@@ -148,7 +146,7 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
  */
 async function getVapidPublicKey(): Promise<string | null> {
   try {
-    const response = await fetch(`${API_BASE_URL}/push/vapid-public-key`);
+    const response = await fetch(`${API_URL}/push/vapid-public-key`);
     const data = await response.json();
     
     if (data.success && data.data?.publicKey) {
@@ -202,7 +200,7 @@ async function sendSubscriptionToServer(
       return false;
     }
 
-    const response = await fetch(`${API_BASE_URL}/push/subscribe`, {
+    const response = await fetch(`${API_URL}/push/subscribe`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -237,7 +235,7 @@ async function removeSubscriptionFromServer(endpoint: string): Promise<boolean> 
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/push/subscribe`, {
+    const response = await fetch(`${API_URL}/push/subscribe`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",

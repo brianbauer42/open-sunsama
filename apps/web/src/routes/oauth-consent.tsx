@@ -16,8 +16,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSEO } from "@/hooks/useSEO";
 import { withRedirect } from "@/lib/auth-redirect";
 import { trackGoal } from "@/lib/analytics";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import { API_URL } from "@/lib/config";
 
 interface ConsentDetails {
   client: {

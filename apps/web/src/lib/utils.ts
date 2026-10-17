@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { API_URL } from "./config";
 
 /**
  * Utility function to merge Tailwind CSS classes with clsx
@@ -91,8 +92,7 @@ export function resolveUploadUrl(
 ): string | null {
   if (!url) return null;
   if (/^(https?:|data:|blob:)/.test(url)) return url;
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3001";
-  if (url.startsWith("/uploads/")) return `${apiBaseUrl}${url}`;
+  if (url.startsWith("/uploads/")) return `${API_URL}${url}`;
   return url;
 }
 
