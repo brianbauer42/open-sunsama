@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Version to publish as, e.g. 1.2.4 (also tags 1.2 and latest). Empty: sha-<commit> only"
+        description: "Exact version to tag, e.g. 1.2.4 (never moves 1.2 or latest). Empty: sha-<commit> only"
         required: false
         default: ""
   pull_request:
@@ -32,12 +32,16 @@ concurrency:
 
 env:
   PUSH: ${{ github.event_name != 'pull_request' }}
-  # v1.2.3 tag (or a manual run with tag 1.2.3): 1.2.3, 1.2, latest and sha-<commit>
+  # v1.2.3 tag push: 1.2.3, 1.2, latest and sha-<commit> (pre-releases skip 1.2
+  # and latest). A manual run tags only the exact version it is given plus
+  # sha-<commit>, so re-publishing an old version never moves 1.2 or latest.
   IMAGE_TAGS: |
-    type=semver,pattern={{version}},value=${{ inputs.tag }}
-    type=semver,pattern={{major}}.{{minor}},value=${{ inputs.tag }}
-    type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') || inputs.tag != '' }}
+    type=semver,pattern={{version}},enable=${{ github.event_name == 'push' }}
+    type=semver,pattern={{major}}.{{minor}},enable=${{ github.event_name == 'push' }}
+    type=semver,pattern={{version}},value=${{ inputs.tag }},enable=${{ inputs.tag != '' }}
     type=sha
+  # latest=auto adds latest for any stable semver tag, so only tag pushes get it
+  LATEST: ${{ github.event_name == 'push' && 'auto' || 'false' }}
   DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
 
 jobs:
@@ -82,6 +86,7 @@ jobs:
         with:
           images: ${{ steps.names.outputs.ghcr }}
           tags: ${{ env.IMAGE_TAGS }}
+          flavor: latest=${{ env.LATEST }}
 
       - name: Log in to GitHub Container Registry
         if: env.PUSH == 'true'
@@ -184,6 +189,7 @@ jobs:
         with:
           images: ${{ steps.names.outputs.images }}
           tags: ${{ env.IMAGE_TAGS }}
+          flavor: latest=${{ env.LATEST }}
 
       - name: Create multi-platform manifests
         working-directory: ${{ runner.temp }}/digests
